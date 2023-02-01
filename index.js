@@ -22,7 +22,7 @@ let provider = new ethers.providers.JsonRpcProvider('https://rpc-mumbai.maticvig
 let walletWithProvider = new ethers.Wallet(process.env.PVKEY, provider);
 
 mongoose.connect(
-  process.env.MONGOURI,
+  process.env.MONGO_URL,
   (err) => {
     if (err) throw err;
     console.log('DB Connected');
