@@ -29,7 +29,7 @@ mongoose.connect(
   },
 );
 
-cron.schedule('*/15 * * * * *', () => {
+cron.schedule('* * * * *', () => {
   console.log('running')
   let yourDate = new Date()
   console.log(yourDate.toISOString().split('T')[0], 'schedule working')
