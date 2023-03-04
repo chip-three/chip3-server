@@ -16,7 +16,7 @@ app.use(cors());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 
-const contractaddress = "0x5B9fabeBc0Aa7c9A384b7A679C4f2bC9576F7bEb"
+const contractaddress = "0xBf1cc2806d3506a6118Ca3308492a7cAA465Fdb7"
 
 let provider = new ethers.providers.JsonRpcProvider('https://rpc-mumbai.maticvigil.com/')
 let walletWithProvider = new ethers.Wallet(process.env.PVKEY, provider);
@@ -29,63 +29,61 @@ mongoose.connect(
   },
 );
 
-cron.schedule('*/20 * * * * *', () => {
 
-  // console.log('running')
-  // let yourDate = new Date()
-  // console.log(yourDate.toISOString().split('T')[0], 'schedule working')
-  // const options = {
-  //   method: 'GET',
-  //   url: `https://api-football-v1.p.rapidapi.com/v3/fixtures?date=${yourDate.toISOString().split('T')[0]}`,
-  //   headers: {
-  //     'X-RapidAPI-Host': 'api-football-v1.p.rapidapi.com',
-  //     'X-RapidAPI-Key': process.env.APIKEY
-  //   }
-  // };
+cron.schedule('* * * * *', () => {
+  let yourDate = new Date()
+  console.log(yourDate.toISOString().split('T')[0], 'schedule working')
+  const options = {
+    method: 'GET',
+    url: `https://api-football-v1.p.rapidapi.com/v3/fixtures?date=${yourDate.toISOString().split('T')[0]}`,
+    headers: {
+      'X-RapidAPI-Host': 'api-football-v1.p.rapidapi.com',
+      'X-RapidAPI-Key': process.env.APIKEY
+    }
+  };
   
-  // axios
-  //   .request(options)
-  //   .then(async function (response) {
-  //     for (const newdata of response.data.response) {
-  //       let origindata = await Data.find({ fixtureid: newdata.fixture.id })
-  //       if( origindata.length == 0) {
-  //         let data = new Data({fixtureid: newdata.fixture.id, data: newdata, date: yourDate.toISOString().split('T')[0]})
-  //         await data.save()
-  //         console.log("Saved", data)
-  //       }else if(newdata.fixture.status.long == "Match Finished"){
-  //         if(origindata[0].data.fixture.status.long != "Match Finished"){
-  //           let contract = new ethers.Contract(contractaddress, abi, walletWithProvider)
-  //           let winteamid
-  //           if(newdata.goals.home > newdata.goals.away){
-  //             winteamid = newdata.teams.home.id
-  //           }else{
-  //             winteamid = newdata.teams.away.id
-  //           }
+  axios
+    .request(options)
+    .then(async function (response) {
+      for (const newdata of response.data.response) {
+        let origindata = await Data.find({ fixtureid: newdata.fixture.id })
+        if( origindata.length == 0) {
+          let data = new Data({fixtureid: newdata.fixture.id, data: newdata, date: yourDate.toISOString().split('T')[0]})
+          await data.save()
+        }else if(newdata.fixture.status.long == "Match Finished"){
+          if(origindata[0].data.fixture.status.long != "Match Finished"){
+            let contract = new ethers.Contract(contractaddress, abi, walletWithProvider)
+            let winteamid
+            if(newdata.goals.home > newdata.goals.away){
+              winteamid = newdata.teams.home.id
+            }else{
+              winteamid = newdata.teams.away.id
+            }
 
-  //           let contracts = await contract.getMyContract(newdata.fixture.id)
-  //           console.log("contracts", contracts)
-  //           if(contracts.length != 0){
-  //             let tx = await contract.release(newdata.fixture.id, winteamid)
-  //             let rs = await tx.wait()
-  //             console.log(tx, rs)
-  //             if(!rs) {
-  //              let failedtx =  new Release({matchID: newdata.fixture.id, released: false})
-  //              await failedtx.save()
-  //             } 
-  //             else {
-  //               let successdtx =  new Release({matchID: newdata.fixture.id, released: true})
-  //              await successdtx.save()
-  //             }
-  //           } 
-  //         }
-  //         if(origindata[0].data.fixture.status.long != newdata.fixture.status.long)
-  //           await Data.findOneAndUpdate({ fixtureid: newdata.fixture.id }, {fixtureid: newdata.fixture.id, data: newdata, date: yourDate.toISOString().split('T')[0]})
-  //       }
-  //     }
-  //   })
-  //   .catch(err=>{
-  //     console.log(err)
-  //   });
+            let contracts = await contract.getMyContract(newdata.fixture.id)
+              console.log("contracts", contracts)
+            if(contracts.length != 0){
+              let tx = await contract.release(newdata.fixture.id, winteamid)
+              let rs = await tx.wait()
+              console.log(tx, rs)
+              if(!rs) {
+               let failedtx =  new Release({matchID: newdata.fixture.id, released: false})
+               await failedtx.save()
+              } 
+              else {
+                let successdtx =  new Release({matchID: newdata.fixture.id, released: true})
+               await successdtx.save()
+              }
+            } 
+          }
+          if(origindata[0].data.fixture.status.long != newdata.fixture.status.long)
+            await Data.findOneAndUpdate({ fixtureid: newdata.fixture.id }, {fixtureid: newdata.fixture.id, data: newdata, date: yourDate.toISOString().split('T')[0]})
+        }
+      }
+    })
+    .catch(err=>{
+      console.log(err)
+    });
 });
 
 app.get('/get_data', async (req, res) => {
