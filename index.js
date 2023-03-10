@@ -88,10 +88,7 @@ cron.schedule('* * * * *', () => {
 
 app.get('/get_data', async (req, res) => {
   let yourDate = new Date()
-  console.log("goiod")
   Data.find({date: yourDate.toISOString().split('T')[0]}, '-_id data', (err, result) => {
-  //Data.find({}, '-_id data', (err, result) => {
-	// Data.find({date: "2023-01-31"}, '-_id data', (err, result) => {
     if (err) {
       res.status(500).json(err);
     } else {
@@ -103,6 +100,13 @@ app.get('/get_data', async (req, res) => {
     }
   })
 })
+
+app.get('/get_data_id', async (req, res) => {
+  const {id} = req.body
+  Data.find({ fixtureid: id }, '-_id data', (err, result) => {
+    res.json(result)
+  })
+} )
 
 app.post('/bet', async (req, res)=>{
   const {matchId, amount, teamId, address} = req.body
