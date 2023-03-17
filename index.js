@@ -29,61 +29,61 @@ mongoose.connect(
   },
 );
 
-cron.schedule('* * * * *', () => {
-  let yourDate = new Date()
-  console.log(yourDate.toISOString().split('T')[0], 'schedule working')
-  const options = {
-    method: 'GET',
-    url: `https://api-football-v1.p.rapidapi.com/v3/fixtures?date=${yourDate.toISOString().split('T')[0]}`,
-    headers: {
-      'X-RapidAPI-Host': 'api-football-v1.p.rapidapi.com',
-      'X-RapidAPI-Key': process.env.APIKEY
-    }
-  };
+// cron.schedule('* * * * *', () => {
+//   let yourDate = new Date()
+//   console.log(yourDate.toISOString().split('T')[0], 'schedule working')
+//   const options = {
+//     method: 'GET',
+//     url: `https://api-football-v1.p.rapidapi.com/v3/fixtures?date=${yourDate.toISOString().split('T')[0]}`,
+//     headers: {
+//       'X-RapidAPI-Host': 'api-football-v1.p.rapidapi.com',
+//       'X-RapidAPI-Key': process.env.APIKEY
+//     }
+//   };
   
-  axios
-    .request(options)
-    .then(async function (response) {
-      for (const newdata of response.data.response) {
-        let origindata = await Data.find({ fixtureid: newdata.fixture.id })
-        if( origindata.length == 0) {
-          let data = new Data({fixtureid: newdata.fixture.id, data: newdata, date: yourDate.toISOString().split('T')[0]})
-          await data.save()
-        }else if(newdata.fixture.status.long == "Match Finished"){
-          if(origindata[0].data.fixture.status.long != "Match Finished"){
-            let contract = new ethers.Contract(contractaddress, abi, walletWithProvider)
-            let winteamid
-            if(newdata.goals.home > newdata.goals.away){
-              winteamid = newdata.teams.home.id
-            }else{
-              winteamid = newdata.teams.away.id
-            }
+//   axios
+//     .request(options)
+//     .then(async function (response) {
+//       for (const newdata of response.data.response) {
+//         let origindata = await Data.find({ fixtureid: newdata.fixture.id })
+//         if( origindata.length == 0) {
+//           let data = new Data({fixtureid: newdata.fixture.id, data: newdata, date: yourDate.toISOString().split('T')[0]})
+//           await data.save()
+//         }else if(newdata.fixture.status.long == "Match Finished"){
+//           if(origindata[0].data.fixture.status.long != "Match Finished"){
+//             let contract = new ethers.Contract(contractaddress, abi, walletWithProvider)
+//             let winteamid
+//             if(newdata.goals.home > newdata.goals.away){
+//               winteamid = newdata.teams.home.id
+//             }else{
+//               winteamid = newdata.teams.away.id
+//             }
 
-            let contracts = await contract.getMyContract(newdata.fixture.id)
-              console.log("contracts", contracts)
-            if(contracts.length != 0){
-              let tx = await contract.release(newdata.fixture.id, winteamid)
-              let rs = await tx.wait()
-              console.log(tx, rs)
-              if(!rs) {
-               let failedtx =  new Release({matchID: newdata.fixture.id, released: false})
-               await failedtx.save()
-              } 
-              else {
-                let successdtx =  new Release({matchID: newdata.fixture.id, released: true})
-               await successdtx.save()
-              }
-            } 
-          }
-          if(origindata[0].data.fixture.status.long != newdata.fixture.status.long)
-            await Data.findOneAndUpdate({ fixtureid: newdata.fixture.id }, {fixtureid: newdata.fixture.id, data: newdata, date: yourDate.toISOString().split('T')[0]})
-        }
-      }
-    })
-    .catch(err=>{
-      console.log(err)
-    });
-});
+//             let contracts = await contract.getMyContract(newdata.fixture.id)
+//               console.log("contracts", contracts)
+//             if(contracts.length != 0){
+//               let tx = await contract.release(newdata.fixture.id, winteamid)
+//               let rs = await tx.wait()
+//               console.log(tx, rs)
+//               if(!rs) {
+//                let failedtx =  new Release({matchID: newdata.fixture.id, released: false})
+//                await failedtx.save()
+//               } 
+//               else {
+//                 let successdtx =  new Release({matchID: newdata.fixture.id, released: true})
+//                await successdtx.save()
+//               }
+//             } 
+//           }
+//           if(origindata[0].data.fixture.status.long != newdata.fixture.status.long)
+//             await Data.findOneAndUpdate({ fixtureid: newdata.fixture.id }, {fixtureid: newdata.fixture.id, data: newdata, date: yourDate.toISOString().split('T')[0]})
+//         }
+//       }
+//     })
+//     .catch(err=>{
+//       console.log(err)
+//     });
+// });
 
 app.get('/get_data', async (req, res) => {
   let yourDate = new Date()
@@ -109,13 +109,14 @@ app.post('/get_data_id', async (req, res) => {
 } )
 
 app.post('/bet', async (req, res)=>{
-  const {matchId, amount, teamId, address} = req.body
-  console.log(matchId, amount, teamId, address)
+  const {matchId, amount, teamId, address, betId} = req.body
+  console.log(matchId, amount, teamId, address, betId)
   let newhistory = new History({
     matchId: matchId, 
     amount: amount,
     teamId: teamId,
-    address: address.toUpperCase()
+    address: address.toUpperCase(),
+    betId: betId
   })
   await newhistory.save()
   res.send("good")
@@ -123,7 +124,6 @@ app.post('/bet', async (req, res)=>{
 
 app.post('/history', async (req, res)=>{
   const {address} = req.body
-  console.log(address)
   let history = await History.find({address: address.toUpperCase()})
   let data = []
   for(const item of history){
@@ -133,6 +133,12 @@ app.post('/history', async (req, res)=>{
     data.push(origindata)
   }
   res.json(data)
+})
+
+app.post('/history_match', async (req, res)=>{
+  const {matchID} = req.body
+  let history = await History.find({matchId: matchID})
+  res.json(history)
 })
 
  

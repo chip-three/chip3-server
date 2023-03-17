@@ -6,7 +6,8 @@ const history = new Schema({
     address: { type: String },
     matchId:{type: String}, 
     teamId: {type: String},
-    amount: {type: String}
+    amount: {type: String},
+    betId: {type: String}
 });
 const History = mongoose.model('history', history)
 
