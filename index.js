@@ -82,7 +82,7 @@ cron.schedule('* * * * *', () => {
           if(origindata[0].data.fixture.status.long != newdata.fixture.status.long)
             await Data.findOneAndUpdate({ fixtureid: newdata.fixture.id }, {fixtureid: newdata.fixture.id, data: newdata, date: yourDate.toISOString().split('T')[0]})
         }else{
-          origindata.date = newdata
+          origindata.data = newdata
           await origindata.save()
         }
       }
