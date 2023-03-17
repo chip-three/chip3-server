@@ -111,12 +111,18 @@ app.post('/get_data_id', async (req, res) => {
 app.post('/bet', async (req, res)=>{
   const {matchId, amount, teamId, address, betId} = req.body
   console.log(matchId, amount, teamId, address, betId)
+  let date = await Data.find({fixtureid: matchId})
+  let teamname
+  if(teamId == date[0].data.teams.home.id) teamname = date[0].data.teams.home.name
+  else teamname = date[0].data.teams.home.away.name
   let newhistory = new History({
     matchId: matchId, 
     amount: amount,
     teamId: teamId,
     address: address.toUpperCase(),
-    betId: betId
+    betId: betId,
+    date: date[0].date, 
+    teamName: teamname
   })
   await newhistory.save()
   res.send("good")
@@ -133,6 +139,13 @@ app.post('/history', async (req, res)=>{
     data.push(origindata)
   }
   res.json(data)
+})
+
+app.get('/history_today', async (req, res)=>{
+  let yourDate = new Date()
+  console.log(yourDate.toISOString().split('T')[0])
+  let history = await History.find({date: yourDate.toISOString().split('T')[0]})
+  res.json(history)
 })
 
 app.post('/history_match', async (req, res)=>{
