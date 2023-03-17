@@ -9,7 +9,8 @@ const history = new Schema({
     amount: {type: String},
     betId: {type: String},
     date: {type: String},
-    teamName: {type: String}
+    teamName: {type: String},
+    otherteam: {type: String}
 });
 const History = mongoose.model('history', history)
 

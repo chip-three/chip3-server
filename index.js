@@ -112,9 +112,15 @@ app.post('/bet', async (req, res)=>{
   const {matchId, amount, teamId, address, betId} = req.body
   console.log(matchId, amount, teamId, address, betId)
   let date = await Data.find({fixtureid: matchId})
-  let teamname
-  if(teamId == date[0].data.teams.home.id) teamname = date[0].data.teams.home.name
-  else teamname = date[0].data.teams.home.away.name
+  let teamname, othername
+  if(teamId == date[0].data.teams.home.id){
+    teamname = date[0].data.teams.home.name
+    othername = date[0].data.teams.away.name
+  } 
+  else {
+    teamname = date[0].data.teams.away.name
+    othername = date[0].data.teams.home.name
+  }
   let newhistory = new History({
     matchId: matchId, 
     amount: amount,
@@ -122,7 +128,8 @@ app.post('/bet', async (req, res)=>{
     address: address.toUpperCase(),
     betId: betId,
     date: date[0].date, 
-    teamName: teamname
+    teamName: teamname,
+    otherteam: othername
   })
   await newhistory.save()
   res.send("good")
