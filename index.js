@@ -47,7 +47,11 @@ cron.schedule('* * * * *', () => {
       for (const newdata of response.data.response) {
         let origindata = await Data.find({ fixtureid: newdata.fixture.id })
         if( origindata.length == 0) {
-          let data = new Data({fixtureid: newdata.fixture.id, data: newdata, date: yourDate.toISOString().split('T')[0]})
+          let data = new Data({
+            fixtureid: newdata.fixture.id, 
+            data: newdata, 
+            date: yourDate.toISOString().split('T')[0]
+          })
           await data.save()
         }else if(newdata.fixture.status.long == "Match Finished"){
           if(origindata[0].data.fixture.status.long != "Match Finished"){
@@ -77,6 +81,9 @@ cron.schedule('* * * * *', () => {
           }
           if(origindata[0].data.fixture.status.long != newdata.fixture.status.long)
             await Data.findOneAndUpdate({ fixtureid: newdata.fixture.id }, {fixtureid: newdata.fixture.id, data: newdata, date: yourDate.toISOString().split('T')[0]})
+        }else{
+          origindata.date = newdata
+          await origindata.save()
         }
       }
     })
